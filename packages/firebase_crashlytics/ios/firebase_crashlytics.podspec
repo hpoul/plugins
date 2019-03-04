@@ -13,6 +13,7 @@ A new flutter plugin project.
   s.author           = { 'Your Company' => 'email@example.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
+  s.static_framework = true
   s.public_header_files = 'Classes/**/*.h'
   s.ios.deployment_target = '8.0'
   s.dependency 'Flutter'
