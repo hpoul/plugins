@@ -35,6 +35,8 @@
                                      }];
     [[Crashlytics sharedInstance] recordError:error];
     result(@"Error reported to Crashlytics.");
+  } else if ([@"Crashlytics#crash" isEqualToString:call.method]) {
+      [[Crashlytics sharedInstance] crash];
   } else if ([@"Crashlytics#isDebuggable" isEqualToString:call.method]) {
     result([NSNumber numberWithBool:[Crashlytics sharedInstance].debugMode]);
   } else if ([@"Crashlytics#getVersion" isEqualToString:call.method]) {

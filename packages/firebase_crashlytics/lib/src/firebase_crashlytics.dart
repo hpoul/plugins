@@ -61,8 +61,11 @@ class Crashlytics {
     }
   }
 
-  void crash() {
-    throw StateError('Error thrown by Crashlytics plugin');
+  Future<void> crash() async {
+    // TODO unify this with [onError]
+    await sendLogs();
+    await sendKeys();
+    await channel.invokeMethod('Crashlytics#crash', {'message': 'Flutter Firebase Forced Cash.'});
   }
 
   /// Reports the global value for debug mode.

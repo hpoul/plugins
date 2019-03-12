@@ -26,7 +26,7 @@ public class FirebaseCrashlyticsPlugin implements MethodCallHandler {
   @Override
   public void onMethodCall(MethodCall call, Result result) {
     if (call.method.equals("Crashlytics#onError")) {
-      Exception exception = new Exception("Dart Error");
+      Exception exception = new Exception("Dart Error: " + call.argument("exception"));
       List<String> lines = (List<String>) call.argument("stackTraceLines");
       List<StackTraceElement> elements = new ArrayList<>();
       for (String line : lines) {
@@ -35,12 +35,18 @@ public class FirebaseCrashlyticsPlugin implements MethodCallHandler {
           elements.add(stackTraceElement);
         }
       }
-      exception.setStackTrace(elements.toArray(new StackTraceElement[elements.size()]));
+      exception.setStackTrace(elements.toArray(new StackTraceElement[0]));
 
       Crashlytics.setString("exception", (String) call.argument("exception"));
       Crashlytics.setString("stackTrace", (String) call.argument("stackTrace"));
       Crashlytics.logException(exception);
       result.success("Error reported to Crashlytics.");
+    } else if (call.method.equals("Crashlytics#crash")) {
+      String message = call.argument("message");
+      if (message == null || "".equals(message)) {
+        message = "Forced crash.";
+      }
+      throw new Error(message);
     } else if (call.method.equals("Crashlytics#isDebuggable")) {
       result.success(Fabric.isDebuggable());
     } else if (call.method.equals("Crashlytics#getVersion")) {
