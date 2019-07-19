@@ -58,7 +58,7 @@
                                         forKey:call.arguments[@"key"]];
     result(nil);
   } else if ([@"Crashlytics#log" isEqualToString:call.method]) {
-    CLS_LOG(@"%@", call.arguments[@"msg"]);
+    CLSLog(@"%@", call.arguments[@"msg"]);
     result(nil);
   } else if ([@"Crashlytics#setUserEmail" isEqualToString:call.method]) {
     [[Crashlytics sharedInstance] setUserEmail:call.arguments[@"email"]];
