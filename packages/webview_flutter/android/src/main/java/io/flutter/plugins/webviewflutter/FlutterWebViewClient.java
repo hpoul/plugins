@@ -9,6 +9,8 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.webkit.HttpAuthHandler;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -28,6 +30,53 @@ class FlutterWebViewClient {
 
   FlutterWebViewClient(MethodChannel methodChannel) {
     this.methodChannel = methodChannel;
+  }
+
+  private void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+    Log.d(TAG, "onReceivedError: received error." + error);
+    Map<String, String> map = new HashMap<>();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      map.put("url", request.getUrl().toString());
+      map.put("description", error.getDescription().toString());
+    } else {
+      map.put("description", error.toString());
+    }
+    this.methodChannel.invokeMethod("onReceivedError", map);
+  }
+
+  private void onReceivedHttpAuthRequest(
+          WebView view, final HttpAuthHandler handler, String host, String realm) {
+    HashMap<String, String> arguments = new HashMap<>();
+    arguments.put("host", host);
+    arguments.put("realm", realm);
+    methodChannel.invokeMethod(
+        "onReceivedHttpAuthRequest",
+        arguments,
+        new MethodChannel.Result() {
+          @Override
+          public void success(Object o) {
+            if (o instanceof Map) {
+              Map<?, ?> map = (Map<?, ?>) o;
+              Object username = map.get("username");
+              Object password = map.get("password");
+              if (username != null && password != null) {
+                handler.proceed(username.toString(), password.toString());
+                return;
+              }
+            }
+            handler.cancel();
+          }
+
+          @Override
+          public void error(String s, String s1, Object o) {
+            handler.cancel();
+          }
+
+          @Override
+          public void notImplemented() {
+            handler.cancel();
+          }
+        });
   }
 
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -128,6 +177,17 @@ class FlutterWebViewClient {
         // Deliberately empty. Occasionally the webview will mark events as having failed to be
         // handled even though they were handled. We don't want to propagate those as they're not
         // truly lost.
+      }
+
+      @Override
+      public void onReceivedHttpAuthRequest(
+              WebView view, final HttpAuthHandler handler, String host, String realm) {
+        FlutterWebViewClient.this.onReceivedHttpAuthRequest(view, handler, host, realm);
+      }
+
+      @Override
+      public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+        FlutterWebViewClient.this.onReceivedError(view, request, error);
       }
     };
   }

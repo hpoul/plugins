@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import '../platform_interface.dart';
+import '../webview_flutter.dart';
 
 /// A [WebViewPlatformController] that uses a method channel to control the webview.
 class MethodChannelWebViewPlatform implements WebViewPlatformController {
@@ -25,7 +26,7 @@ class MethodChannelWebViewPlatform implements WebViewPlatformController {
   static const MethodChannel _cookieManagerChannel =
       MethodChannel('plugins.flutter.io/cookie_manager');
 
-  Future<bool> _onMethodCall(MethodCall call) async {
+  Future<dynamic> _onMethodCall(MethodCall call) async {
     switch (call.method) {
       case 'javascriptChannelMessage':
         final String channel = call.arguments['channel'];
@@ -42,6 +43,24 @@ class MethodChannelWebViewPlatform implements WebViewPlatformController {
         return null;
       case 'onPageStarted':
         _platformCallbacksHandler.onPageStarted(call.arguments['url']);
+        return null;
+      case 'onReceivedHttpAuthRequest':
+        final String host = call.arguments['host'];
+        final String realm = call.arguments['realm'];
+        final AuthInfo handled = await _platformCallbacksHandler
+            .onReceivedHttpAuthRequest(host, realm);
+        if (handled == null) {
+          return null;
+        }
+        return <String, String>{
+          'username': handled.username,
+          'password': handled.password,
+        };
+      case 'onReceivedError':
+        _platformCallbacksHandler.onReceivedError(WebViewError(
+          url: call.arguments['url'],
+          description: call.arguments['description'],
+        ));
         return null;
     }
     throw MissingPluginException(

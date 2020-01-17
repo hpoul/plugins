@@ -79,6 +79,14 @@ typedef void PageStartedCallback(String url);
 /// Signature for when a [WebView] has finished loading a page.
 typedef void PageFinishedCallback(String url);
 
+/// Called for authorization requests (basic authorization) Expected to return username/password,
+/// or null if it should cancel the request.
+typedef Future<AuthInfo> PageReceivedHttpAuthRequestCallback(
+    String host, String realm);
+
+/// Notification of an error while loading the current page.
+typedef void ReceivedErrorCallback(WebViewError error);
+
 /// Specifies possible restrictions on automatic media playback.
 ///
 /// This is typically used in [WebView.initialMediaPlaybackPolicy].
@@ -152,6 +160,8 @@ class WebView extends StatefulWidget {
     this.userAgent,
     this.initialMediaPlaybackPolicy =
         AutoMediaPlaybackPolicy.require_user_action_for_all_media_types,
+    this.onReceivedError,
+    this.onReceivedHttpAuthRequest,
   })  : assert(javascriptMode != null),
         assert(initialMediaPlaybackPolicy != null),
         super(key: key);
@@ -276,6 +286,10 @@ class WebView extends StatefulWidget {
   /// directly in the HTML has been loaded and code injected with
   /// [WebViewController.evaluateJavascript] can assume this.
   final PageFinishedCallback onPageFinished;
+
+  final ReceivedErrorCallback onReceivedError;
+
+  final PageReceivedHttpAuthRequestCallback onReceivedHttpAuthRequest;
 
   /// Controls whether WebView debugging is enabled.
   ///
@@ -491,6 +505,42 @@ class _PlatformCallbacksHandler implements WebViewPlatformCallbacksHandler {
       _javascriptChannels[channel.name] = channel;
     }
   }
+
+  @override
+  void onReceivedError(WebViewError error) {
+    if (_widget.onReceivedError != null) {
+      _widget.onReceivedError(error);
+    }
+  }
+
+  @override
+  Future<AuthInfo> onReceivedHttpAuthRequest(String host, String realm) async {
+    if (_widget.onReceivedHttpAuthRequest != null) {
+      return _widget.onReceivedHttpAuthRequest(host, realm);
+    }
+    return null;
+  }
+}
+
+/// Simple credentials wrapper for authorization requests returned by [WebViewClient.onReceivedHttpAuthRequest].
+class AuthInfo {
+  AuthInfo(this.username, this.password);
+
+  final String username;
+  final String password;
+}
+
+typedef Future<AuthInfo> AuthHandler(String host, String realm);
+
+/// Generic error during loading page in [WebView] and passed to [WebViewClient.onReceivedError].
+class WebViewError {
+  WebViewError({this.url, this.description});
+
+  /// URL of the page when the error happened. (might be null if unknown)
+  final String url;
+
+  /// Localized description of the error.
+  final String description;
 }
 
 /// Controls a [WebView].

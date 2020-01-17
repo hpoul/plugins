@@ -28,6 +28,15 @@ abstract class WebViewPlatformCallbacksHandler {
 
   /// Invoked by [WebViewPlatformController] when a page has finished loading.
   void onPageFinished(String url);
+
+  /// Called for authorization requests (basic authorization) Expected to return username/password,
+  /// or null if it should cancel the request.
+  Future<AuthInfo> onReceivedHttpAuthRequest(String host, String realm) async {
+    return null;
+  }
+
+  /// Notification of an error while loading the current page.
+  void onReceivedError(WebViewError error) {}
 }
 
 /// Interface for talking to the webview's platform implementation.

@@ -65,4 +65,45 @@
 - (void)webView:(WKWebView*)webView didFinishNavigation:(WKNavigation*)navigation {
   [_methodChannel invokeMethod:@"onPageFinished" arguments:@{@"url" : webView.URL.absoluteString}];
 }
+
+- (void)webView:(WKWebView *)webView didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition, NSURLCredential * _Nullable))completionHandler {
+    NSURLProtectionSpace* ps = challenge.protectionSpace;
+    [_methodChannel
+        invokeMethod:@"onReceivedHttpAuthRequest"
+           arguments:@{@"host" : ps.host, @"realm" : ps.realm ? ps.realm : @""}
+              result:^(id _Nullable result) {
+                if (result && [result isKindOfClass:[NSDictionary class]]) {
+                  id username = result[@"username"];
+                  id password = result[@"password"];
+                  if (username && password) {
+                    completionHandler(
+                        NSURLSessionAuthChallengeUseCredential,
+                        [NSURLCredential credentialWithUser:username
+                                                   password:password
+                                                persistence:NSURLCredentialPersistenceForSession]);
+                    return;
+                  }
+                }
+                completionHandler(NSURLSessionAuthChallengePerformDefaultHandling, nil);
+              }];
+
+}
+
+- (void)webView:(WKWebView*)webView
+    didFailNavigation:(WKNavigation*)navigation
+            withError:(NSError*)error {
+  [_methodChannel invokeMethod:@"onReceivedError"
+               arguments:@{@"url" : webView.URL.absoluteString, @"description" : [error localizedDescription]}];
+}
+
+- (void)webView:(WKWebView*)webView
+    didFailProvisionalNavigation:(WKNavigation*)navigation
+                       withError:(NSError*)error {
+  [_methodChannel invokeMethod:@"onReceivedError"
+               arguments:@{
+                 @"url" : webView.URL.absoluteString ?: [NSNull null],
+                 @"description" : [error localizedDescription]
+               }];
+}
+
 @end
