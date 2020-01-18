@@ -56,6 +56,10 @@
 
 @end
 
+@interface FLTWebViewController (WKUIDelegate) <WKUIDelegate>
+
+@end
+
 @implementation FLTWebViewController {
   FLTWKWebView* _webView;
   int64_t _viewId;
@@ -94,6 +98,7 @@
     _webView = [[FLTWKWebView alloc] initWithFrame:frame configuration:configuration];
     _navigationDelegate = [[FLTWKNavigationDelegate alloc] initWithChannel:_channel];
     _webView.navigationDelegate = _navigationDelegate;
+    _webView.UIDelegate = self;
     __weak __typeof__(self) weakSelf = self;
     [_channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [weakSelf onMethodCall:call result:result];
@@ -396,6 +401,19 @@
   } else {
     NSLog(@"Updating UserAgent is not supported for Flutter WebViews prior to iOS 9.");
   }
+}
+
+@end
+
+@implementation FLTWebViewController (WKUIDelegate)
+
+// simply open all _blank links in the same browser. TODO move this into flutter code?
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures {
+    if (!navigationAction.targetFrame.isMainFrame) {
+        // TODO let flutter decide what to do!
+        [webView loadRequest:navigationAction.request];
+    }
+    return nil;
 }
 
 @end
