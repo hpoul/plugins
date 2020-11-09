@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../platform_interface.dart';
 import 'webview_method_channel.dart';
@@ -44,4 +45,8 @@ class CupertinoWebView implements WebViewPlatform {
 
   @override
   Future<bool> clearCookies() => MethodChannelWebViewPlatform.clearCookies();
+
+  @override
+  Future<bool> setCookie(String url, String cookieValue) =>
+      MethodChannelWebViewPlatform.setCookie(url, cookieValue);
 }

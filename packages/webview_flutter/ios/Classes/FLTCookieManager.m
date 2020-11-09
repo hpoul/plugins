@@ -19,6 +19,23 @@
 - (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
   if ([[call method] isEqualToString:@"clearCookies"]) {
     [self clearCookies:result];
+  } else if ([[call method] isEqualToString:@"setCookie"]) {
+      NSDictionary *args = call.arguments;
+      NSString *url = args[@"url"];
+      NSString *cookieValue = args[@"value"];
+      NSArray<NSHTTPCookie*> *cookies = [NSHTTPCookie cookiesWithResponseHeaderFields:@{@"Set-Cookie": cookieValue} forURL:[NSURL URLWithString:url]];
+      NSLog(@"parsed cookies: %@", cookies);
+      if (cookies.count == 0) {
+          result(@(NO));
+          return;
+      }
+      NSLog(@"cookie properties: %@", cookies.firstObject.properties);
+      WKWebsiteDataStore *dataStore = [WKWebsiteDataStore defaultDataStore];
+      WKHTTPCookieStore *cookieStore = dataStore.httpCookieStore;
+      [cookieStore setCookie:cookies.firstObject completionHandler:^{
+          NSLog(@"Finished setting cookie.");
+          result(@(YES));
+      }];
   } else {
     result(FlutterMethodNotImplemented);
   }

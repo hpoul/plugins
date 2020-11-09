@@ -728,6 +728,9 @@ class CookieManager {
   ///
   /// Returns true if cookies were present before clearing, else false.
   Future<bool> clearCookies() => WebView.platform.clearCookies();
+
+  Future<bool> setCookie(String url, String cookieValue) =>
+      WebView.platform.setCookie(url, cookieValue);
 }
 
 // Throws an ArgumentError if `url` is not a valid URL string.
